@@ -1,16 +1,22 @@
 // --- CONFIGURATION ---
 
+
 // IMPORTANT: Replace this with the Production URL of your n8n webhook.
+
 
 const N8N_WEBHOOK_URL = 'https://innergcomplete.app.n8n.cloud/webhook/84988548-6e5c-4119-81f1-9e93bbe37747';
 
+
 // Replace with your ElevenLabs Agent ID.
+
 
 const AGENT_ID = '07SRhAkpaGG5svmcKAlh'; 
 
 
 
+
 const VOICE_ID = 'QYmulHXHr8imt56OqKpj'; 
+
 
 
 
@@ -121,18 +127,10 @@ async function startMicrophoneStream() {
         
         mediaRecorder.ondataavailable = (event) => {
             // --- FINAL, CRITICAL CHANGE ---
-            // The audio data must be converted to base64 and wrapped in a JSON object.
+            // Revert back to sending the raw binary audio data (Blob).
+            // This is what the server seems to be expecting after the initial JSON message.
             if (event.data.size > 0 && readyToSendAudio && websocket.readyState === WebSocket.OPEN) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const base64Audio = reader.result.split(',')[1];
-                    const audioMessage = {
-                        "type": "audio_event",
-                        "audio_base64": base64Audio
-                    };
-                    websocket.send(JSON.stringify(audioMessage));
-                };
-                reader.readAsDataURL(event.data);
+                websocket.send(event.data);
             }
         };
 
