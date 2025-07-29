@@ -9,6 +9,8 @@ const statusDiv = document.getElementById('status');
 
 let websocket;
 let audioContext;
+let readyToSendAudio = false; // <-- NEW: A flag to control audio streaming
+
 async function startConversation() {
     try {
         statusDiv.textContent = 'Status: Getting ready...';
@@ -42,6 +44,9 @@ async function startConversation() {
 
             // Send the initial JSON configuration message
             websocket.send(messageToSend);
+            
+            // --- NEW: Set the flag to true only after the config is sent ---
+            readyToSendAudio = true; 
             
             statusDiv.textContent = 'Status: Connected! You can start talking.';
             startMicrophoneStream();
@@ -77,4 +82,42 @@ async function startConversation() {
     }
 }
 
-// ... (rest of your code)
+async function startMicrophoneStream() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        
+        mediaRecorder.ondataavailable = (event) => {
+            // --- NEW: Only send data if the flag is true ---
+            if (readyToSendAudio && event.data.size > 0 && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(event.data);
+            }
+        };
+
+        mediaRecorder.start(250); 
+    } catch (error) {
+        console.error('Microphone access denied or failed:', error);
+        statusDiv.textContent = 'Status: Please allow microphone access to talk.';
+        websocket.close();
+    }
+}
+
+async function playAudio(base64Audio) {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const audioData = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0)).buffer;
+
+    try {
+        const audioBuffer = await audioContext.decodeAudioData(audioData);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start();
+    } catch (error) {
+        console.error('Error decoding or playing audio:', error);
+    }
+}
+
+startButton.addEventListener('click', startConversation);
