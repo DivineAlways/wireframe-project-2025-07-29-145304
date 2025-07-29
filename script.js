@@ -1,24 +1,34 @@
 // --- CONFIGURATION ---
 
+
 // IMPORTANT: Replace this with the Production URL of your n8n webhook.
+
 
 const N8N_WEBHOOK_URL = 'https://innergcomplete.app.n8n.cloud/webhook/84988548-6e5c-4119-81f1-9e93bbe37747';
 
 
+
 // Replace with your ElevenLabs Agent ID.
+
 
 const AGENT_ID = '07SRhAkpaGG5svmcKAlh'; 
 
 
+
 // IMPORTANT: You need to get these IDs from your ElevenLabs account.
+
 
 // 1. Get the voice ID from the 'Voice Lab' or 'Voices' section.
 
+
 // 2. The model ID for conversational AI is typically a variant of 'eleven_multilingual_v2'.
+
 
 //    A common one is 'eleven_multilingual_v2_convai'.
 
+
 const VOICE_ID = 'QYmulHXHr8imt56OqKpj'; 
+
 
 const MODEL_ID = 'eleven_multilingual_v2_convai';
 
@@ -83,7 +93,10 @@ async function startConversation() {
             readyToSendAudio = true; 
             
             statusDiv.textContent = 'Status: Connected! You can start talking.';
-            startMicrophoneStream();
+            
+            // Wait for 500ms to ensure the microphone has started and the
+            // server has processed the initial message before we send audio.
+            setTimeout(startMicrophoneStream, 500);
         };
 
         websocket.onmessage = (event) => {
@@ -125,9 +138,7 @@ async function startMicrophoneStream() {
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         
         mediaRecorder.ondataavailable = (event) => {
-            // --- CRITICAL CHANGE ---
-            // Only send the data if it exists. The first ondataavailable event
-            // can sometimes fire with an empty blob.
+            // Only send the data if it has a size.
             if (event.data.size > 0 && readyToSendAudio && websocket.readyState === WebSocket.OPEN) {
                 websocket.send(event.data);
             }
