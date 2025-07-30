@@ -126,11 +126,19 @@ async function startMicrophoneStream() {
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         
         mediaRecorder.ondataavailable = (event) => {
-            // --- FINAL, CRITICAL CHANGE ---
-            // Revert back to sending the raw binary audio data (Blob).
-            // This is what the server seems to be expecting after the initial JSON message.
+            // Convert audio blob to base64 and send as JSON message
             if (event.data.size > 0 && readyToSendAudio && websocket.readyState === WebSocket.OPEN) {
-                websocket.send(event.data);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Data URL format: "data:audio/webm;base64,xxxxx"
+                    const base64Data = reader.result.split(',')[1];
+                    const message = {
+                        type: 'audio_event',
+                        audio_event: { audio_base_64: base64Data }
+                    };
+                    websocket.send(JSON.stringify(message));
+                };
+                reader.readAsDataURL(event.data);
             }
         };
 
