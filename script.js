@@ -120,38 +120,38 @@ async function startConversation() {
 
 
 // --- FUNCTION TO HANDLE MICROPHONE STREAMING ---
+// Stream raw 16kHz PCM audio via Web Audio API
 async function startMicrophoneStream() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        
-        mediaRecorder.ondataavailable = (event) => {
-            // Convert audio blob to base64 and send as JSON message
-            if (event.data.size > 0 && readyToSendAudio && websocket.readyState === WebSocket.OPEN) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    // Data URL format: "data:audio/webm;base64,xxxxx"
-                    const base64Data = reader.result.split(',')[1];
-                    const message = {
-                        type: 'audio_event',
-                        audio_event: { audio_base_64: base64Data }
-                    };
-                    websocket.send(JSON.stringify(message));
-                };
-                reader.readAsDataURL(event.data);
-            }
-        };
-
-        mediaRecorder.start(250); 
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+        source.connect(processor);
+        processor.connect(audioContext.destination);
         console.log('Microphone stream started.');
-
+        processor.onaudioprocess = (e) => {
+            if (!readyToSendAudio || websocket.readyState !== WebSocket.OPEN) return;
+            const inputData = e.inputBuffer.getChannelData(0);
+            const pcm16 = convertFloat32ToInt16(inputData);
+            websocket.send(pcm16);
+        };
     } catch (error) {
         console.error('Microphone access denied or failed:', error);
         statusDiv.textContent = 'Status: Please allow microphone access to talk.';
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
-            websocket.close();
-        }
+        if (websocket && websocket.readyState === WebSocket.OPEN) websocket.close();
     }
+}
+
+// Helper to convert Float32Array to Int16Array buffer
+function convertFloat32ToInt16(buffer) {
+    const l = buffer.length;
+    const result = new Int16Array(l);
+    for (let i = 0; i < l; i++) {
+        const s = Math.max(-1, Math.min(1, buffer[i]));
+        result[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return result.buffer;
 }
 
 
