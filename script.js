@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-console.log('Loading script.js - Version with 16kHz support');
+console.log('Loading script.js - Version with 16kHz support and NO destination connection');
 
 // IMPORTANT: Replace this with the Production URL of your n8n webhook.
 
