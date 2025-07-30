@@ -124,16 +124,20 @@ async function startConversation() {
 async function startMicrophoneStream() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        // Use browser's default sample rate, then resample to 16kHz
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioContext.createMediaStreamSource(stream);
         const processor = audioContext.createScriptProcessor(4096, 1, 1);
         source.connect(processor);
         processor.connect(audioContext.destination);
-        console.log('Microphone stream started.');
+        console.log('Microphone stream started. Browser sample rate:', audioContext.sampleRate);
+        
         processor.onaudioprocess = (e) => {
             if (!readyToSendAudio || websocket.readyState !== WebSocket.OPEN) return;
             const inputData = e.inputBuffer.getChannelData(0);
-            const pcm16 = convertFloat32ToInt16(inputData);
+            // Resample from browser rate to 16kHz
+            const resampled = resampleTo16kHz(inputData, audioContext.sampleRate);
+            const pcm16 = convertFloat32ToInt16(resampled);
             console.log('Sending PCM audio chunk, size:', pcm16.byteLength, 'bytes');
             websocket.send(pcm16);
         };
@@ -142,6 +146,21 @@ async function startMicrophoneStream() {
         statusDiv.textContent = 'Status: Please allow microphone access to talk.';
         if (websocket && websocket.readyState === WebSocket.OPEN) websocket.close();
     }
+}
+
+// Simple resampling function to convert to 16kHz
+function resampleTo16kHz(inputBuffer, inputSampleRate) {
+    const targetSampleRate = 16000;
+    const ratio = inputSampleRate / targetSampleRate;
+    const outputLength = Math.round(inputBuffer.length / ratio);
+    const output = new Float32Array(outputLength);
+    
+    for (let i = 0; i < outputLength; i++) {
+        const sourceIndex = Math.round(i * ratio);
+        output[i] = inputBuffer[Math.min(sourceIndex, inputBuffer.length - 1)];
+    }
+    
+    return output;
 }
 
 // Helper to convert Float32Array to Int16Array buffer
