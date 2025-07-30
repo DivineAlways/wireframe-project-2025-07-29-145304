@@ -138,8 +138,12 @@ async function startMicrophoneStream() {
             // Resample from browser rate to 16kHz
             const resampled = resampleTo16kHz(inputData, audioContext.sampleRate);
             const pcm16 = convertFloat32ToInt16(resampled);
-            console.log('Sending PCM audio chunk, size:', pcm16.byteLength, 'bytes');
-            websocket.send(pcm16);
+            // Only send if there's actual audio data (not silence)
+            const hasAudio = resampled.some(sample => Math.abs(sample) > 0.01);
+            if (hasAudio) {
+                console.log('Sending PCM audio chunk, size:', pcm16.byteLength, 'bytes');
+                websocket.send(pcm16);
+            }
         };
     } catch (error) {
         console.error('Microphone access denied or failed:', error);
@@ -181,16 +185,34 @@ async function playAudio(base64Audio) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     
-    const audioData = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0)).buffer;
-
     try {
-        const audioBuffer = await audioContext.decodeAudioData(audioData);
+        // Decode base64 to raw PCM bytes
+        const binaryString = atob(base64Audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Convert bytes to 16-bit PCM samples
+        const pcm16Data = new Int16Array(bytes.buffer);
+        
+        // Create audio buffer for 16kHz mono PCM
+        const audioBuffer = audioContext.createBuffer(1, pcm16Data.length, 16000);
+        const channelData = audioBuffer.getChannelData(0);
+        
+        // Convert Int16 to Float32 and copy to audio buffer
+        for (let i = 0; i < pcm16Data.length; i++) {
+            channelData[i] = pcm16Data[i] / 32768; // Convert to -1.0 to 1.0 range
+        }
+        
+        // Play the audio
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
         source.start();
+        
     } catch (error) {
-        console.error('Error decoding or playing audio:', error);
+        console.error('Error playing audio:', error);
     }
 }
 
