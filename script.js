@@ -129,7 +129,7 @@ async function startMicrophoneStream() {
         const source = audioContext.createMediaStreamSource(stream);
         const processor = audioContext.createScriptProcessor(4096, 1, 1);
         source.connect(processor);
-        processor.connect(audioContext.destination);
+        // Don't connect to destination to avoid sample rate conflicts
         console.log('Microphone stream started. Browser sample rate:', audioContext.sampleRate);
         
         processor.onaudioprocess = (e) => {
