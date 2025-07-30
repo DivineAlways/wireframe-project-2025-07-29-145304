@@ -70,7 +70,7 @@ async function startConversation() {
                 "type": "start",
                 "agent_id": AGENT_ID,
                 "language": "en",
-                "sample_rate": 44100,
+                "sample_rate": 16000,
                 "voice_id": VOICE_ID,
                 "model_id": MODEL_ID
             };
@@ -91,11 +91,11 @@ async function startConversation() {
             console.log('Received message:', event.data);
             const data = JSON.parse(event.data);
             
-            if (data.audio) {
-                playAudio(data.audio);
+            if (data.audio_event && data.audio_event.audio_base_64) {
+                playAudio(data.audio_event.audio_base_64);
             }
-            if (data.type === 'response' && data.text) {
-                console.log('Agent says (text):', data.text);
+            if (data.agent_response_event && data.agent_response_event.agent_response) {
+                console.log('Agent says:', data.agent_response_event.agent_response);
             }
         };
 
