@@ -1,9 +1,9 @@
-<!DOC    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://innergcomplete.app.n8n.cloud wss://api.elevenlabs.io; media-src 'self' blob:;">YPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://innergcomplete.app.n8n.cloud wss://api.elevenlabs.io; media-src 'self' blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://innergcomplete.app.n8n.cloud wss://api.elevenlabs.io; media-src 'self' blob:;">
     <title>ElevenLabs Voice Agent</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 50px; }
@@ -19,23 +19,6 @@
     <button id="startButton">Click to Talk</button>
     <div id="status">Status: Waiting...</div>
 
-    <script src="script.js?v=20250729csp"></script> </body>
-
-
-<script type="text/javascript">
-  (function(d, t) {
-      var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-      v.onload = function() {
-        window.voiceflow.chat.load({
-          verify: { projectID: '688934ebc7cad62f4f50641d' },
-          url: 'https://general-runtime.voiceflow.com',
-          versionID: 'production',
-          voice: {
-            url: "https://runtime-api.voiceflow.com"
-          }
-        });
-      }
-      v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; v.type = "text/javascript"; s.parentNode.insertBefore(v, s);
-  })(document, 'script');
-</script>
+    <script src="script.js?v=20250729fixed"></script>
+</body>
 </html>
