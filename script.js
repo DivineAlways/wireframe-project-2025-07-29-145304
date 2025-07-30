@@ -134,6 +134,7 @@ async function startMicrophoneStream() {
             if (!readyToSendAudio || websocket.readyState !== WebSocket.OPEN) return;
             const inputData = e.inputBuffer.getChannelData(0);
             const pcm16 = convertFloat32ToInt16(inputData);
+            console.log('Sending PCM audio chunk, size:', pcm16.byteLength, 'bytes');
             websocket.send(pcm16);
         };
     } catch (error) {
