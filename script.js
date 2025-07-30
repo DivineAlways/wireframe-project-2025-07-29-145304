@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-console.log('Loading script.js - Version with 16kHz support and NO destination connection');
+console.log('Loading script.js - Version with FIXED PCM audio playback v3');
 
 // IMPORTANT: Replace this with the Production URL of your n8n webhook.
 
@@ -84,7 +84,8 @@ async function startConversation() {
             
             statusDiv.textContent = 'Status: Connected! You can start talking.';
             
-            setTimeout(startMicrophoneStream, 500);
+            // Start microphone immediately
+            startMicrophoneStream();
         };
 
         websocket.onmessage = (event) => {
